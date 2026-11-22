@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+let rawBase = import.meta.env.VITE_API_URL || '/api'
+if (rawBase.endsWith('/')) rawBase = rawBase.slice(0, -1)
+const API_BASE = rawBase.endsWith('/api') ? rawBase : `${rawBase}/api`
 
 function normalizeProduct(p) {
   if (!p) return null

@@ -7,7 +7,15 @@ import { errorHandler, notFound } from './middleware/error.js'
 
 const app = express()
 
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }))
+const clientOrigin = process.env.CLIENT_ORIGIN
+app.use(
+  cors({
+    origin: clientOrigin
+      ? [clientOrigin, /\.vercel\.app$/, 'http://localhost:5173']
+      : true,
+  }),
+)
+
 app.use(express.json())
 app.use('/api', apiLimiter)
 
