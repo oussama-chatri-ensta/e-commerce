@@ -1,188 +1,195 @@
-# SouqDZ Backend
+# SouqDZ — Full-Stack E-Commerce Application
 
-Backend for the SouqDZ e-commerce application built in TD-TP 2.
+Full-stack e-commerce web application connecting a React frontend with a Node.js/Express REST API and MongoDB.
 
-**Student:** Oussama Chatri
+**Student:** Oussama Chatri  
+**School:** Higher National School of Advanced Technologies (ENSTA)  
+**Module:** Web and Mobile Development (WAMD)  
+**Supervised by:** Dr. S. SENHADJI  
 
-The frontend still runs as before. This project adds the Node.js/Express REST API that stores products and users in MongoDB, authenticates users with JWT, protects product write operations, and limits repeated requests.
+---
 
-## Technologies
+## Application description
 
-- Node.js and Express.js
-- MongoDB with Mongoose
-- JSON Web Tokens (`jsonwebtoken`)
-- Password hashing with `bcryptjs`
-- OAuth 2.0 / OpenID Connect token verification with `jose`
-- Rate limiting with `express-rate-limit`
-- CORS and dotenv
+SouqDZ is an e-commerce platform built for the Algerian market. It features:
+- Product catalogue with real-time category filtering, search, and sorting (by price, rating, discount).
+- Full-stack integration: products are stored in MongoDB and served via Express REST API.
+- User authentication with JWT (JSON Web Tokens) for registration and login.
+- Protected CRUD operations allowing authenticated users to add, edit, and delete products directly from the frontend.
+- Shopping cart and favourites panel with persistent local storage.
+- Responsive design with dark/light mode toggle.
+- Error handling and loading states for asynchronous API requests.
+
+## Technologies used
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, Redux (legacy createStore), Vite |
+| Backend | Node.js, Express.js |
+| Database | MongoDB, Mongoose ODM |
+| Authentication | JSON Web Tokens (`jsonwebtoken`), bcryptjs |
+| Communication | Fetch API with Vite dev proxy |
+| Security | Express rate limiting, CORS |
 
 ## Project structure
 
 ```
-server/
-  src/
-    config/db.js
-    controllers/authController.js
-    controllers/productController.js
-    middleware/auth.js
-    middleware/error.js
-    middleware/rateLimit.js
-    models/Product.js
-    models/User.js
-    routes/authRoutes.js
-    routes/productRoutes.js
-    app.js
-    seed.js
-    server.js
-  .env.example
-  package.json
+.
+├── public/                 # Static assets
+├── screenshots/            # UI and testing screenshots
+├── server/                 # Express backend
+│   ├── src/
+│   │   ├── config/db.js            # MongoDB connection
+│   │   ├── controllers/            # Route handlers (auth, products)
+│   │   ├── middleware/             # JWT auth, rate limiter, error handler
+│   │   ├── models/                 # Mongoose schemas (User, Product)
+│   │   ├── routes/                 # Express routers
+│   │   ├── app.js                  # Express app setup
+│   │   ├── seed.js                 # Sample database seeding script
+│   │   └── server.js               # Entry point
+│   ├── .env.example
+│   └── package.json
+├── src/                    # React frontend
+│   ├── api/                # API client (Fetch API functions)
+│   ├── components/         # UI components (Header, ProductGrid, Modals, etc.)
+│   ├── data/               # Constants and fallback sample data
+│   ├── redux/              # Redux store, actions, reducers, and selectors
+│   ├── styles/             # Global CSS styles and variables
+│   ├── utils/              # Helper utilities (currency formatter)
+│   ├── App.jsx             # Main layout component
+│   └── main.jsx            # React root entry point
+├── package.json            # Frontend package configuration
+├── vite.config.js          # Vite config with API proxy
+└── README.md
 ```
 
 ## Database models
 
-**Product**
+### Product Model (`server/src/models/Product.js`)
 
-| Field | Type | Notes |
-| --- | --- | --- |
-| name | String | required |
-| description | String | required |
-| price | Number | required, cannot be negative |
-| category | String | required |
-| imageUrl | String | required |
-| stock | Number | required, cannot be negative |
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | String | Yes | Name of the product (trimmed) |
+| `description` | String | Yes | Detailed description |
+| `price` | Number | Yes | Price in DZD (minimum 0) |
+| `category` | String | Yes | Department/category |
+| `imageUrl` | String | Yes | URL to product picture |
+| `stock` | Number | Yes | Available stock quantity (minimum 0) |
+| `createdAt` / `updatedAt` | Date | Auto | Timestamps handled by Mongoose |
 
-Timestamps (`createdAt`, `updatedAt`) are added automatically.
+### User Model (`server/src/models/User.js`)
 
-**User**
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | String | Yes | Full name |
+| `email` | String | Yes | Unique email, stored in lowercase |
+| `passwordHash` | String | Yes | Hashed password (excluded by default from queries) |
+| `createdAt` / `updatedAt` | Date | Auto | Timestamps handled by Mongoose |
 
-| Field | Type | Notes |
-| --- | --- | --- |
-| name | String | required |
-| email | String | required, unique, stored in lowercase |
-| passwordHash | String | required, bcrypt hash, excluded from queries by default |
-
-## API endpoints
+## API endpoints and access requirements
 
 Base URL: `http://localhost:3000/api`
 
-### Authentication
+### Authentication Endpoints
 
-| Method | Endpoint | Purpose | Access |
+| Method | Endpoint | Access | Description |
 | --- | --- | --- | --- |
-| POST | `/api/auth/register` | Register a new user | Public |
-| POST | `/api/auth/login` | Log in and receive a JWT | Public |
+| `POST` | `/api/auth/register` | Public | Register new user (`name`, `email`, `password`) |
+| `POST` | `/api/auth/login` | Public | Log in user, returns JWT and user profile |
 
-### Products
+### Product Endpoints
 
-| Method | Endpoint | Purpose | Access |
+| Method | Endpoint | Access | Description |
 | --- | --- | --- | --- |
-| GET | `/api/products` | Retrieve all products | Public |
-| GET | `/api/products/:id` | Retrieve one product | Public |
-| POST | `/api/products` | Create a product | JWT required |
-| PUT | `/api/products/:id` | Update a product | JWT required |
-| DELETE | `/api/products/:id` | Delete a product | JWT required |
+| `GET` | `/api/products` | Public | Get all products from MongoDB |
+| `GET` | `/api/products/:id` | Public | Get a single product by its MongoDB `_id` |
+| `POST` | `/api/products` | Protected (JWT) | Add a new product |
+| `PUT` | `/api/products/:id` | Protected (JWT) | Update an existing product |
+| `DELETE` | `/api/products/:id` | Protected (JWT) | Delete a product from database |
 
-Responses use JSON. Errors use the shape `{ "message": "..." }`.
+API errors return a JSON response in the format `{ "message": "error description" }` with appropriate HTTP status codes (`400`, `401`, `404`, `409`, `429`, `500`).
 
-Status codes used: `200`, `201`, `400`, `401`, `404`, `409`, `429` and `500`.
+## JWT authentication mechanism
 
-## Authentication
-
-1. `POST /api/auth/register` receives `name`, `email` and `password`. The password is hashed with bcrypt before the user is stored. A duplicate email returns `409 Conflict`.
-2. `POST /api/auth/login` verifies the email and password and returns a JWT:
-   ```json
-   { "token": "..." }
+1. **User Registration:** The user registers via the frontend modal. The backend hashes the password using `bcryptjs` with 10 salt rounds before persisting it in MongoDB.
+2. **User Login:** When logging in, the backend finds the user by email, compares passwords with `bcrypt.compare`, and signs a JSON Web Token containing the user ID (`sub`). The token is signed using `JWT_SECRET` and expires in 1 day.
+3. **Frontend Storage:** The token and user profile are saved in Redux state and mirrored into the browser's `localStorage` (`souqdz_token` and `souqdz_user`), ensuring persistent sessions across page reloads.
+4. **Protected Requests:** When an authenticated user performs CRUD actions (Add, Edit, Delete), the frontend includes the JWT in the HTTP request headers:
    ```
-3. The token is signed with `JWT_SECRET`, uses `HS256`, contains the user id in `sub`, and expires after one day.
-4. Protected requests must send:
+   Authorization: Bearer <token>
    ```
-   Authorization: Bearer <JWT_TOKEN>
-   ```
-5. The authentication middleware verifies the token. A missing, invalid or expired token returns `401 Unauthorized`.
-6. If an OAuth 2.0/OIDC provider is configured, the same middleware also accepts access tokens issued by that provider after checking the signature, issuer and audience.
+5. **Backend Verification:** The Express middleware `requireAuth` extracts the bearer token, verifies its signature against `JWT_SECRET`, and attaches the decoded user payload to `req.user`. If the token is missing, invalid, or expired, the server responds with status `401 Unauthorized`.
+6. **Logout:** Logging out clears the Redux auth state and removes the stored token from `localStorage`.
 
-## OAuth 2.0 testing with Postman
+## Installation and setup instructions
 
-The API can validate OAuth 2.0 access tokens that are JWTs, for example tokens from Keycloak, Auth0 or Azure AD. Set these variables in `.env`:
+### Prerequisites
 
-```
-OAUTH_ISSUER=https://your-provider/issuer
-OAUTH_AUDIENCE=your-api-audience
-OAUTH_JWKS_URI=https://your-provider/.well-known/jwks.json
-```
+- Node.js (version 18 or higher recommended)
+- MongoDB instance (local service or MongoDB Atlas cluster)
 
-In Postman:
+### 1. Backend Setup
 
-1. Create an OAuth 2.0 client in the provider and note the client ID.
-2. Open the Authorization tab of a protected request, select **OAuth 2.0**.
-3. Choose the **Authorization Code (with PKCE)** flow.
-4. Set the authorization URL, token URL, client ID and redirect URI exactly as registered with the provider.
-5. Request the token and let Postman attach it to the request.
-6. Send `POST /api/products`, `PUT /api/products/:id` or `DELETE /api/products/:id`. A valid token is accepted and an invalid one returns `401`.
-
-## Rate limiting
-
-- All `/api` routes: 100 requests per 15 minutes per IP.
-- `POST /api/auth/login`: 5 requests per 15 minutes per IP.
-- When a limit is exceeded the API returns `429 Too Many Requests`.
-
-## Installation and running
-
-Requirements: Node.js 20.19+, MongoDB (local or Atlas).
+Open a terminal in the `server` directory:
 
 ```bash
 cd server
 npm install
+```
+
+Create a `.env` file from the example:
+
+```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
+Configure your environment variables in `server/.env`:
 
-```
+```env
 PORT=3000
 MONGODB_URI=mongodb://127.0.0.1:27017/souqdz
-JWT_SECRET=some_long_random_value
+JWT_SECRET=your_jwt_secret_key_here
 CLIENT_ORIGIN=http://localhost:5173
 ```
 
-For MongoDB Atlas, use the connection string from the Atlas dashboard, for example:
+*(If using MongoDB Atlas, replace `MONGODB_URI` with your connection string).*
 
-```
-MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/souqdz?retryWrites=true&w=majority
-```
-
-Add your machine's IP address to the Atlas access list.
-
-Populate the database with sample products:
+Seed the database with initial products:
 
 ```bash
 npm run seed
 ```
 
-Start the API:
+Start the backend server in development mode:
 
 ```bash
 npm run dev
 ```
 
-Production start:
+The server runs on `http://localhost:3000`.
+
+### 2. Frontend Setup
+
+In a new terminal window at the project root directory:
 
 ```bash
-npm start
+npm install
+npm run dev
 ```
 
-The API listens on `http://localhost:3000`. The React frontend is started separately from the repository root with `npm run dev`.
+The React frontend starts at `http://localhost:5173`.
 
-## Environment variables
+Vite is configured to automatically proxy API calls (`/api`) to `http://localhost:3000`, so no manual CORS proxy configuration is required during local development.
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| PORT | No | API port, defaults to 3000 |
-| MONGODB_URI | Yes | MongoDB or Atlas connection string |
-| JWT_SECRET | Yes | Secret used to sign local JWTs |
-| CLIENT_ORIGIN | No | Allowed CORS origin, defaults to `http://localhost:5173` |
-| OAUTH_ISSUER | No | OIDC issuer, enables OAuth2 token support |
-| OAUTH_AUDIENCE | No | Expected audience in OAuth2 access tokens |
-| OAUTH_JWKS_URI | No | Provider JWKS URL used to verify token signatures |
+## Testing the application
 
-`.env` is excluded by `.gitignore`. Only `.env.example` is committed.
+1. **Browsing Products:** Open `http://localhost:5173`. The catalogue loads all products directly from MongoDB. You can filter by category, search by title, and sort by price or rating.
+2. **Authentication:**
+   - Click "Sign in" in the header.
+   - Choose "Register here" to create a new user account.
+   - After registration, you are logged in automatically and your name is displayed in the header.
+3. **CRUD Operations:**
+   - **Add Product:** Once signed in, click "+ Add product" in the header to open the creation modal. Fill in the product details and submit. The new item is saved to MongoDB and immediately displayed.
+   - **Edit Product:** Hover over any product card and click the Edit button (pencil icon), or open the product modal and click "Edit product". Modify the fields and click "Save changes".
+   - **Delete Product:** Click the Delete button (trash icon) on any product card or in the product modal, confirm the dialog, and the item will be removed from MongoDB and the frontend.
+4. **Cart and Favourites:** Products can be added to the shopping cart and saved to favourites as usual.

@@ -2,15 +2,24 @@ import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { addToCart } from '../redux/actions/cartActions'
 import { toggleFavorite } from '../redux/actions/favoritesActions'
-import { closeCart, closeProduct, openCart, showToast } from '../redux/actions/uiActions'
+import { deleteProductSuccess } from '../redux/actions/productsActions'
+import {
+  closeCart,
+  closeProduct,
+  openCart,
+  openProductForm,
+  showToast,
+} from '../redux/actions/uiActions'
+import { deleteProduct } from '../api'
 import { FREE_DELIVERY_THRESHOLD } from '../data/products'
 import formatDzd from '../utils/formatDzd'
 import Rating from './Rating'
-import { CartIcon, HeartIcon, MinusIcon, PlusIcon, XIcon } from './Icons'
+import { CartIcon, EditIcon, HeartIcon, MinusIcon, PlusIcon, TrashIcon, XIcon } from './Icons'
 
 export default function ProductModal() {
   const dispatch = useDispatch()
   const product = useSelector((state) => state.ui.product)
+  const token = useSelector((state) => state.auth.token)
   const qtyInCart = useSelector(
     (state) => state.cart.items.find((item) => item.id === product?.id)?.qty ?? 0,
   )
@@ -39,11 +48,41 @@ export default function ProductModal() {
     ? Math.round((1 - product.price / product.oldPrice) * 100)
     : 0
 
+  const images = Array.isArray(product.images) && product.images.length > 0
+    ? product.images
+    : [product.thumbnail || product.imageUrl]
+
   const handleAdd = () => {
     dispatch(addToCart(product, qty))
     dispatch(openCart())
     dispatch(closeProduct())
-    dispatch(showToast(qty > 1 ? `${qty} × ${product.title} added to cart` : `${product.title} added to cart`))
+    dispatch(
+      showToast(
+        qty > 1
+          ? `${qty} × ${product.title} added to cart`
+          : `${product.title} added to cart`,
+      ),
+    )
+  }
+
+  const handleEdit = () => {
+    dispatch(closeProduct())
+    dispatch(openProductForm(product))
+  }
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm(`Are you sure you want to delete "${product.title}"?`)
+    if (!confirmed) return
+
+    try {
+      const id = product._id || product.id
+      await deleteProduct(id, token)
+      dispatch(deleteProductSuccess(id))
+      dispatch(closeProduct())
+      dispatch(showToast(`"${product.title}" deleted`, 'info'))
+    } catch (err) {
+      dispatch(showToast(err.message || 'Could not delete product', 'info'))
+    }
   }
 
   return (
@@ -65,10 +104,10 @@ export default function ProductModal() {
         </button>
 
         <div className="modal-media">
-          <img src={product.images[image] ?? product.thumbnail} alt={product.title} />
-          {product.images.length > 1 && (
+          <img src={images[image] ?? product.thumbnail} alt={product.title} />
+          {images.length > 1 && (
             <div className="modal-thumbs">
-              {product.images.map((thumb, index) => (
+              {images.map((thumb, index) => (
                 <button
                   key={thumb}
                   type="button"
@@ -84,7 +123,9 @@ export default function ProductModal() {
         </div>
 
         <div className="modal-info">
-          <p className="modal-cat">{product.sub} · {product.category}</p>
+          <p className="modal-cat">
+            {product.sub || product.category} · {product.category}
+          </p>
           <h2>{product.title}</h2>
           <Rating rating={product.rating} reviews={product.reviews} />
 
@@ -128,7 +169,12 @@ export default function ProductModal() {
                 <PlusIcon />
               </button>
             </div>
-            <button type="button" className="btn primary" onClick={handleAdd} disabled={soldOut}>
+            <button
+              type="button"
+              className="btn primary"
+              onClick={handleAdd}
+              disabled={soldOut}
+            >
               <CartIcon /> Add to cart
             </button>
             <button
@@ -140,6 +186,17 @@ export default function ProductModal() {
               <HeartIcon filled={saved} />
             </button>
           </div>
+
+          {token && (
+            <div className="modal-admin-row">
+              <button type="button" className="btn ghost small" onClick={handleEdit}>
+                <EditIcon /> Edit product
+              </button>
+              <button type="button" className="btn ghost small danger" onClick={handleDelete}>
+                <TrashIcon /> Delete product
+              </button>
+            </div>
+          )}
 
           {qtyInCart > 0 && <p className="modal-incart">{qtyInCart} × already in your cart.</p>}
 

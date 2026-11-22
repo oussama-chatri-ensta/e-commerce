@@ -11,6 +11,10 @@ import {
   HIDE_TOAST,
   OPEN_FAVORITES,
   CLOSE_FAVORITES,
+  OPEN_AUTH_MODAL,
+  CLOSE_AUTH_MODAL,
+  OPEN_PRODUCT_FORM,
+  CLOSE_PRODUCT_FORM,
 } from '../actionTypes'
 
 let toastId = 0
@@ -34,6 +38,14 @@ export const closeProduct = () => ({ type: CLOSE_PRODUCT })
 export const openFavorites = () => ({ type: OPEN_FAVORITES })
 
 export const closeFavorites = () => ({ type: CLOSE_FAVORITES })
+
+export const openAuthModal = () => ({ type: OPEN_AUTH_MODAL })
+
+export const closeAuthModal = () => ({ type: CLOSE_AUTH_MODAL })
+
+export const openProductForm = (product = null) => ({ type: OPEN_PRODUCT_FORM, product })
+
+export const closeProductForm = () => ({ type: CLOSE_PRODUCT_FORM })
 
 export const showToast = (message, toastType = 'success') => ({
   type: SHOW_TOAST,

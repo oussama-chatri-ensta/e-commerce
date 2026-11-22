@@ -1,9 +1,8 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { addToCart, clearCart } from '../redux/actions/cartActions'
-import { clearFavorites } from '../redux/actions/favoritesActions'
+import { addToCart } from '../redux/actions/cartActions'
+import { clearFavorites, toggleFavorite } from '../redux/actions/favoritesActions'
 import { closeFavorites, openProduct, showToast } from '../redux/actions/uiActions'
-import products from '../data/products'
 import formatDzd from '../utils/formatDzd'
 import Rating from './Rating'
 import { CartIcon, HeartIcon, TrashIcon, XIcon } from './Icons'
@@ -12,6 +11,7 @@ export default function FavoritesPanel() {
   const dispatch = useDispatch()
   const open = useSelector((state) => state.ui.favoritesOpen)
   const favorites = useSelector((state) => state.favorites)
+  const products = useSelector((state) => state.products.items)
 
   useEffect(() => {
     if (!open) return undefined
@@ -33,16 +33,26 @@ export default function FavoritesPanel() {
 
   const moveAllToCart = () => {
     saved.forEach((product) => dispatch(addToCart(product)))
-    dispatch(showToast(`${saved.length} favourite${saved.length === 1 ? '' : 's'} moved to your cart`))
+    dispatch(
+      showToast(
+        `${saved.length} favourite${saved.length === 1 ? '' : 's'} moved to your cart`,
+      ),
+    )
     dispatch(clearFavorites())
     dispatch(closeFavorites())
   }
 
   return (
     <div className="overlay favorites-overlay" onClick={() => dispatch(closeFavorites())}>
-      <aside className="favorites" aria-label="Saved favourites" onClick={(event) => event.stopPropagation()}>
+      <aside
+        className="favorites"
+        aria-label="Saved favourites"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="favorites-head">
-          <h2>Favourites <span>({favorites.length})</span></h2>
+          <h2>
+            Favourites <span>({favorites.length})</span>
+          </h2>
           <button
             type="button"
             className="icon-btn"
@@ -57,7 +67,9 @@ export default function FavoritesPanel() {
           <div className="favorites-empty">
             <HeartIcon />
             <p>Nothing saved yet — tap the heart on any product.</p>
-            <a href="#catalog" onClick={() => dispatch(closeFavorites())}>Browse the souq</a>
+            <a href="#catalog" onClick={() => dispatch(closeFavorites())}>
+              Browse the souq
+            </a>
           </div>
         ) : (
           <>
@@ -92,10 +104,18 @@ export default function FavoritesPanel() {
             </ul>
 
             <div className="favorites-foot">
-              <button type="button" className="btn primary block" onClick={moveAllToCart}>
+              <button
+                type="button"
+                className="btn primary block"
+                onClick={moveAllToCart}
+              >
                 <CartIcon /> Move all to cart
               </button>
-              <button type="button" className="btn ghost block" onClick={() => dispatch(clearFavorites())}>
+              <button
+                type="button"
+                className="btn ghost block"
+                onClick={() => dispatch(clearFavorites())}
+              >
                 Clear favourites
               </button>
             </div>

@@ -1,6 +1,5 @@
-import { useDispatch } from 'react-redux'
-import products from '../data/products'
-import { CATEGORIES } from '../data/products'
+import { useDispatch, useSelector } from 'react-redux'
+import products, { CATEGORIES } from '../data/products'
 import { setCategory, setSort } from '../redux/actions/uiActions'
 import { TruckIcon, RefreshIcon, ShieldIcon } from './Icons'
 
@@ -8,6 +7,8 @@ const SHOWCASE_IDS = ['p123', 'p190', 'p88', 'p203', 'p95', 'p215']
 
 export default function Hero() {
   const dispatch = useDispatch()
+  const items = useSelector((state) => state.products.items)
+  const count = items.length > 0 ? items.length : products.length
 
   const faces = SHOWCASE_IDS
     .map((id) => products.find((p) => p.id === id))
@@ -25,7 +26,7 @@ export default function Hero() {
           <span className="hero-pill">Cash on delivery, all 58 wilayas</span>
           <h1>Everything you need, one souq.</h1>
           <p className="hero-lede">
-            {products.length} hand-picked products across {CATEGORIES.length} departments —
+            {count} hand-picked products across {CATEGORIES.length} departments —
             electronics, fashion, home &amp; living, beauty and sports gear,
             with a 7-day money-back guarantee.
           </p>
@@ -45,7 +46,9 @@ export default function Hero() {
                   className="hero-face"
                   src={p.thumbnail}
                   alt=""
-                  style={{ transform: `rotateY(${(360 / faces.length) * i}deg) translateZ(var(--ring-radius))` }}
+                  style={{
+                    transform: `rotateY(${(360 / faces.length) * i}deg) translateZ(var(--ring-radius))`,
+                  }}
                 />
               ))}
             </div>

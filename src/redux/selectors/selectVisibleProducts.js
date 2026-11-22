@@ -1,34 +1,32 @@
-import products from '../../data/products'
-
 const discountOf = (product) => (product.oldPrice ? 1 - product.price / product.oldPrice : 0)
 
-// Reads the ui slice, keeps every other module (Header, Toolbar, grid, empty
-// state) in sync without passing props through App.
 export default function selectVisibleProducts(state) {
   const { search, category, sort } = state.ui
+  const list = state.products?.items || []
   const query = search.trim().toLowerCase()
 
-  const list = products.filter((product) => {
+  const filtered = list.filter((product) => {
     if (category !== 'All' && product.category !== category) return false
     if (!query) return true
     return (
-      product.title.toLowerCase().includes(query) ||
-      product.brand?.toLowerCase().includes(query) ||
-      product.sub.toLowerCase().includes(query) ||
-      product.category.toLowerCase().includes(query)
+      (product.title || product.name || '').toLowerCase().includes(query) ||
+      (product.brand || '').toLowerCase().includes(query) ||
+      (product.sub || '').toLowerCase().includes(query) ||
+      (product.category || '').toLowerCase().includes(query) ||
+      (product.description || '').toLowerCase().includes(query)
     )
   })
 
   switch (sort) {
     case 'price-asc':
-      return [...list].sort((a, b) => a.price - b.price)
+      return [...filtered].sort((a, b) => a.price - b.price)
     case 'price-desc':
-      return [...list].sort((a, b) => b.price - a.price)
+      return [...filtered].sort((a, b) => b.price - a.price)
     case 'rating':
-      return [...list].sort((a, b) => b.rating - a.rating || b.reviews - a.reviews)
+      return [...filtered].sort((a, b) => (b.rating || 0) - (a.rating || 0))
     case 'discount':
-      return [...list].sort((a, b) => discountOf(b) - discountOf(a))
+      return [...filtered].sort((a, b) => discountOf(b) - discountOf(a))
     default:
-      return list
+      return filtered
   }
 }

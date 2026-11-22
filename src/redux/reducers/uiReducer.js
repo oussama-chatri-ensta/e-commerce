@@ -11,6 +11,10 @@ import {
   HIDE_TOAST,
   OPEN_FAVORITES,
   CLOSE_FAVORITES,
+  OPEN_AUTH_MODAL,
+  CLOSE_AUTH_MODAL,
+  OPEN_PRODUCT_FORM,
+  CLOSE_PRODUCT_FORM,
 } from '../actionTypes'
 
 export const defaultUiState = {
@@ -20,6 +24,9 @@ export const defaultUiState = {
   sort: 'featured',
   cartOpen: false,
   favoritesOpen: false,
+  authModalOpen: false,
+  productFormOpen: false,
+  editingProduct: null,
   product: null,
   toast: null,
 }
@@ -42,6 +49,14 @@ function uiReducer(state = defaultUiState, action) {
       return { ...state, product: action.product }
     case CLOSE_PRODUCT:
       return { ...state, product: null }
+    case OPEN_AUTH_MODAL:
+      return { ...state, authModalOpen: true }
+    case CLOSE_AUTH_MODAL:
+      return { ...state, authModalOpen: false }
+    case OPEN_PRODUCT_FORM:
+      return { ...state, productFormOpen: true, editingProduct: action.product || null }
+    case CLOSE_PRODUCT_FORM:
+      return { ...state, productFormOpen: false, editingProduct: null }
     case SHOW_TOAST:
       return { ...state, toast: { id: action.id, message: action.message, toastType: action.toastType } }
     case HIDE_TOAST:

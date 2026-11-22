@@ -2,14 +2,17 @@ import { useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { addToCart } from '../redux/actions/cartActions'
 import { toggleFavorite } from '../redux/actions/favoritesActions'
-import { openProduct, showToast } from '../redux/actions/uiActions'
+import { deleteProductSuccess } from '../redux/actions/productsActions'
+import { openProduct, openProductForm, showToast } from '../redux/actions/uiActions'
+import { deleteProduct } from '../api'
 import formatDzd from '../utils/formatDzd'
 import Rating from './Rating'
-import { CartIcon, HeartIcon } from './Icons'
+import { CartIcon, EditIcon, HeartIcon, TrashIcon } from './Icons'
 
 export default function ProductCard({ product }) {
   const dispatch = useDispatch()
   const saved = useSelector((state) => state.favorites.includes(product.id))
+  const token = useSelector((state) => state.auth.token)
   const cardRef = useRef(null)
 
   const handleTilt = (e) => {
@@ -44,10 +47,32 @@ export default function ProductCard({ product }) {
     dispatch(toggleFavorite(product.id))
     dispatch(
       showToast(
-        saved ? `${product.title} removed from favourites` : `${product.title} saved to favourites`,
+        saved
+          ? `${product.title} removed from favourites`
+          : `${product.title} saved to favourites`,
         saved ? 'info' : 'success',
       ),
     )
+  }
+
+  const handleEdit = (e) => {
+    e.stopPropagation()
+    dispatch(openProductForm(product))
+  }
+
+  const handleDelete = async (e) => {
+    e.stopPropagation()
+    const confirmed = window.confirm(`Are you sure you want to delete "${product.title}"?`)
+    if (!confirmed) return
+
+    try {
+      const id = product._id || product.id
+      await deleteProduct(id, token)
+      dispatch(deleteProductSuccess(id))
+      dispatch(showToast(`"${product.title}" deleted from database`, 'info'))
+    } catch (err) {
+      dispatch(showToast(err.message || 'Could not delete product', 'info'))
+    }
   }
 
   return (
@@ -69,6 +94,30 @@ export default function ProductCard({ product }) {
           {runningLow && <span className="flag low">Low stock</span>}
           {soldOut && <span className="flag out">Sold out</span>}
         </div>
+
+        {token && (
+          <div className="card-admin-actions">
+            <button
+              type="button"
+              className="card-admin-btn edit"
+              onClick={handleEdit}
+              aria-label={`Edit ${product.title}`}
+              title="Edit product"
+            >
+              <EditIcon />
+            </button>
+            <button
+              type="button"
+              className="card-admin-btn delete"
+              onClick={handleDelete}
+              aria-label={`Delete ${product.title}`}
+              title="Delete product"
+            >
+              <TrashIcon />
+            </button>
+          </div>
+        )}
+
         <button
           type="button"
           className={saved ? 'card-save saved' : 'card-save'}
@@ -81,7 +130,7 @@ export default function ProductCard({ product }) {
       </div>
 
       <div className="card-body">
-        <p className="card-sub">{product.sub}</p>
+        <p className="card-sub">{product.sub || product.category}</p>
         <h3>
           <button type="button" onClick={() => dispatch(openProduct(product))}>
             {product.title}
@@ -99,7 +148,9 @@ export default function ProductCard({ product }) {
             className="card-add"
             onClick={handleAdd}
             disabled={soldOut}
-            aria-label={soldOut ? `${product.title} is sold out` : `Add ${product.title} to cart`}
+            aria-label={
+              soldOut ? `${product.title} is sold out` : `Add ${product.title} to cart`
+            }
           >
             <CartIcon />
             <span>Add</span>

@@ -7,6 +7,8 @@ import ProductGrid from './components/ProductGrid'
 import ProductModal from './components/ProductModal'
 import CartDrawer from './components/CartDrawer'
 import FavoritesPanel from './components/FavoritesPanel'
+import AuthModal from './components/AuthModal'
+import ProductFormModal from './components/ProductFormModal'
 import Toast from './components/Toast'
 import Footer from './components/Footer'
 
@@ -15,6 +17,8 @@ export default function App() {
   const cartOpen = useSelector((state) => state.ui.cartOpen)
   const favoritesOpen = useSelector((state) => state.ui.favoritesOpen)
   const modalProduct = useSelector((state) => state.ui.product)
+  const authModalOpen = useSelector((state) => state.ui.authModalOpen)
+  const productFormOpen = useSelector((state) => state.ui.productFormOpen)
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -23,9 +27,13 @@ export default function App() {
   useEffect(() => {
     document.body.classList.toggle(
       'no-scroll',
-      cartOpen || favoritesOpen || Boolean(modalProduct),
+      cartOpen ||
+        favoritesOpen ||
+        Boolean(modalProduct) ||
+        authModalOpen ||
+        productFormOpen,
     )
-  }, [cartOpen, favoritesOpen, modalProduct])
+  }, [cartOpen, favoritesOpen, modalProduct, authModalOpen, productFormOpen])
 
   return (
     <>
@@ -39,6 +47,8 @@ export default function App() {
       <ProductModal />
       <CartDrawer />
       <FavoritesPanel />
+      <AuthModal />
+      <ProductFormModal />
       <Toast />
     </>
   )
